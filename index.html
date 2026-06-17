@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>原豆良選 · 咖啡生豆選品</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Noto+Serif+TC:wght@200;300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 :root {
   --ink:#1a1610;--ink2:#2d2820;--paper:#f5f0e8;--paper2:#ede7d9;--paper3:#ddd6c8;
@@ -274,6 +275,10 @@ footer{background:var(--ink);color:var(--mist2);padding:40px 48px;display:flex;a
   <button onclick="setPending()">模擬待審核</button>
   <button onclick="logout()">登出</button>
   <span style="color:var(--mist2)">· 狀態：<code id="demo-status">訪客</code></span>
+  <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+    <input id="gas-url-input" placeholder="Apps Script 網址" style="font-size:11px;padding:3px 8px;border-radius:2px;border:1px solid rgba(139,105,20,.4);background:var(--paper2);color:var(--ink);width:200px;">
+    <button onclick="saveGasUrl()">儲存</button>
+  </span>
 </div>
 
 <!-- NAV -->
@@ -381,7 +386,7 @@ footer{background:var(--ink);color:var(--mist2);padding:40px 48px;display:flex;a
         </div>
         <div class="line-modal-title">以 LINE 帳號登入</div>
         <div class="line-modal-sub">使用您的 LINE 帳號快速驗證身份<br>首次登入需填寫資料並等待審核</div>
-        <button class="btn-line-big" onclick="mockLineLogin()">
+        <button class="btn-line-big" onclick="startLineLogin()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
           以 LINE 繼續
         </button>
@@ -502,6 +507,11 @@ const LOTS = [
     desc:'頂級 G1 精品批次，日曬帶出熱帶果香，風味層次豐富。' },
 ];
 
+/* ─── LIFF & GAS CONFIG ───────────────────────────── */
+const LIFF_ID = '2010068872-dwEIsvVD';
+let GAS_URL = localStorage.getItem('gas_url') || '';
+let lineProfile = null; // { userId, displayName }
+
 let state = { user: null };
 let currentLot = null, qty = { q1:0, q5:0, qb:0 }, orders = [];
 
@@ -510,7 +520,89 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', () => {
     document.getElementById('hdr').classList.toggle('scrolled', window.scrollY > 40);
   });
+  const gasInput = document.getElementById('gas-url-input');
+  if (gasInput && GAS_URL) gasInput.value = GAS_URL;
+  initLiff();
 });
+
+function saveGasUrl() {
+  const v = document.getElementById('gas-url-input').value.trim();
+  if (!v) return showToast('請輸入 GAS 網址', 'error');
+  GAS_URL = v;
+  localStorage.setItem('gas_url', v);
+  showToast('已儲存後端網址', 'success');
+}
+
+/* ─── GAS API HELPER ──────────────────────────────── */
+async function callGas(action, payload = {}) {
+  if (!GAS_URL) { showToast('尚未設定後端網址（GAS_URL）', 'error'); throw new Error('no gas url'); }
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action, ...payload })
+  });
+  return res.json();
+}
+
+/* ─── LIFF INIT & LOGIN FLOW ──────────────────────── */
+async function initLiff() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+  } catch (err) {
+    console.error('LIFF init failed', err);
+    showToast('LIFF 初始化失敗，請確認是否從 LINE 開啟', 'error');
+    return;
+  }
+
+  if (!liff.isLoggedIn()) {
+    // 尚未登入，等使用者按下「以 LINE 登入」按鈕時才觸發 liff.login()
+    return;
+  }
+
+  // 已經是登入狀態（例如重新整理頁面），直接取得 profile 並查詢會員狀態
+  await resolveLineProfileAndStatus();
+}
+
+async function resolveLineProfileAndStatus() {
+  try {
+    const profile = await liff.getProfile();
+    lineProfile = { userId: profile.userId, displayName: profile.displayName };
+  } catch (err) {
+    console.error('getProfile failed', err);
+    showToast('無法取得 LINE 個人資料', 'error');
+    return;
+  }
+
+  if (!GAS_URL) {
+    // 還沒設定後端網址，先停在「已取得 LINE 身份、尚未查詢會員狀態」
+    return;
+  }
+
+  try {
+    const data = await callGas('login', { lineUserId: lineProfile.userId });
+    if (data.success && data.found) {
+      state.user = { name: data.name, status: data.status, lineUserId: lineProfile.userId };
+      renderLots();
+      if (data.status === 'pending') {
+        document.getElementById('pending-bar').classList.add('show');
+      }
+    } else {
+      // 第一次使用，尚未註冊 → 開啟資料填寫視窗
+      closeModal('login-modal');
+      openModal('register-modal');
+    }
+  } catch (err) {
+    console.error('login check failed', err);
+  }
+}
+
+function startLineLogin() {
+  if (!liff.isLoggedIn()) {
+    liff.login();
+    return;
+  }
+  resolveLineProfileAndStatus();
+}
 
 function renderLots() {
   const approved = state.user?.status === 'approved';
@@ -576,23 +668,39 @@ function renderLots() {
   }).join('');
 }
 
-/* LINE Login mock */
-function mockLineLogin() {
-  closeModal('login-modal');
-  setTimeout(() => { openModal('register-modal'); }, 350);
-}
-
-function submitRegister() {
+async function submitRegister() {
   const name = document.getElementById('reg-name').value.trim();
   const phone = document.getElementById('reg-phone').value.trim();
   const address = document.getElementById('reg-address').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const company = document.getElementById('reg-company').value.trim();
+  const taxid = document.getElementById('reg-taxid').value.trim();
   const errEl = document.getElementById('reg-err');
   if (!name || !phone || !address) { errEl.textContent='請填寫姓名、電話與地址（必填）'; errEl.style.display='block'; return; }
+  if (taxid && !/^\d{8}$/.test(taxid)) { errEl.textContent='統一編號必須為8碼數字'; errEl.style.display='block'; return; }
+  if (!lineProfile) { errEl.textContent='尚未取得 LINE 身份，請重新登入'; errEl.style.display='block'; return; }
   errEl.style.display='none';
-  state.user = { name, phone, status:'pending' };
-  closeModal('register-modal');
-  openModal('pending-modal');
-  renderLots();
+
+  try {
+    const data = await callGas('register', {
+      lineUserId: lineProfile.userId,
+      displayName: lineProfile.displayName,
+      name, phone, address, email,
+      company, taxid
+    });
+    if (data.success) {
+      state.user = { name, status: data.status || 'pending', lineUserId: lineProfile.userId };
+      closeModal('register-modal');
+      openModal('pending-modal');
+      renderLots();
+    } else {
+      errEl.textContent = data.error || '送出失敗，請稍後再試';
+      errEl.style.display = 'block';
+    }
+  } catch (err) {
+    errEl.textContent = '無法連線到後端，請確認 GAS_URL 設定';
+    errEl.style.display = 'block';
+  }
 }
 
 /* Demo controls */
