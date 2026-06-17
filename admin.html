@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原豆良選 — 後台管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&family=Playfair+Display:wght@400;700&family=Noto+Serif+TC:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0e0f;
+  --surface: #13161a;
+  --surface2: #1a1e23;
+  --surface3: #20252c;
+  --border: #252b33;
+  --border2: #2e3640;
+  --accent: #3d8af7;
+  --accent-dim: #1a3a6a;
+  --green: #3dba7e;
+  --green-bg: #0d2018;
+  --red: #e05555;
+  --red-bg: #220d0d;
+  --amber: #e0a030;
+  --amber-bg: #221800;
+  --text: #c8d0d8;
+  --text-dim: #7a8899;
+  --text-muted: #4a5566;
+  --cream: #e8edf2;
+  --sidebar-w: 220px;
+  --r: 6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: var(--sidebar-w); min-height: 100vh;
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; left: 0; top: 0; bottom: 0; z-index: 50;
+  transform: translateX(0); transition: transform 0.25s;
+}
+.sidebar-brand {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-brand h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px; color: var(--cream); margin-bottom: 2px;
+}
+.sidebar-brand span { font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em; }
+
+nav.sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+.nav-section { font-size: 10px; letter-spacing: 0.2em; color: var(--text-muted); padding: 12px 16px 6px; text-transform: uppercase; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; font-size: 13px; color: var(--text-dim);
+  cursor: pointer; transition: all 0.15s; border-left: 2px solid transparent;
+}
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--accent-dim); color: var(--accent); border-left-color: var(--accent); }
+.nav-item .icon { font-size: 15px; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto; background: var(--red);
+  color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px;
+}
+
+.sidebar-footer {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-muted);
+}
+.sidebar-footer button {
+  display: block; width: 100%; margin-top: 8px;
+  padding: 7px; background: transparent; border: 1px solid var(--border2);
+  color: var(--text-dim); border-radius: var(--r); font-size: 12px;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer; transition: all 0.2s;
+}
+.sidebar-footer button:hover { border-color: var(--red); color: var(--red); }
+
+/* ─── MAIN CONTENT ─── */
+.content { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+.topbar {
+  height: 52px; background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; position: sticky; top: 0; z-index: 30;
+}
+.topbar-title { font-size: 15px; color: var(--cream); font-weight: 500; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-right span { font-size: 12px; color: var(--text-muted); }
+#gas-status { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border2); }
+.gas-ok { background: var(--green-bg); color: var(--green); border-color: rgba(61,186,126,0.3) !important; }
+.gas-err { background: var(--red-bg); color: var(--red); border-color: rgba(224,85,85,0.3) !important; }
+
+.page { padding: 24px; flex: 1; display: none; }
+.page.active { display: block; }
+
+/* ─── STATS GRID ─── */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px 18px;
+}
+.stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+.stat-value { font-size: 26px; font-weight: 500; color: var(--cream); }
+.stat-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+.stat-card.accent .stat-value { color: var(--accent); }
+.stat-card.green .stat-value { color: var(--green); }
+.stat-card.amber .stat-value { color: var(--amber); }
+
+/* ─── SECTION HEAD ─── */
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-head h2 { font-size: 15px; color: var(--cream); font-weight: 500; }
+
+/* ─── BUTTONS ─── */
+.btn {
+  padding: 8px 16px; border-radius: var(--r);
+  font-size: 13px; font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer; transition: all 0.15s; border: 1px solid var(--border2);
+}
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary { background: transparent; color: var(--text-dim); }
+.btn-secondary:hover { border-color: var(--text-dim); color: var(--text); }
+.btn-green { background: var(--green); color: var(--bg); border-color: var(--green); }
+.btn-green:hover { filter: brightness(1.1); }
+.btn-red { background: transparent; color: var(--red); border-color: rgba(224,85,85,0.4); }
+.btn-red:hover { background: var(--red-bg); }
+.btn-amber { background: transparent; color: var(--amber); border-color: rgba(224,160,48,0.4); }
+.btn-amber:hover { background: var(--amber-bg); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-xs { padding: 3px 9px; font-size: 11px; }
+
+/* ─── TABLE ─── */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; overflow-x: auto; margin-bottom: 24px; }
+table { width: 100%; border-collapse: collapse; min-width: 600px; }
+th { background: var(--surface2); padding: 10px 14px; font-size: 11px; color: var(--text-muted); text-align: left; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+td.mono { font-family: monospace; font-size: 11px; color: var(--text-muted); }
+
+/* ─── BADGE ─── */
+.badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; }
+.badge-pending { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(224,160,48,0.3); }
+.badge-approved { background: var(--green-bg); color: var(--green); border: 1px solid rgba(61,186,126,0.3); }
+.badge-rejected { background: var(--red-bg); color: var(--red); border: 1px solid rgba(224,85,85,0.3); }
+.badge-cancelled { background: var(--border); color: var(--text-muted); border: 1px solid var(--border2); }
+.badge-open { background: rgba(61,138,247,0.15); color: var(--accent); border: 1px solid rgba(61,138,247,0.3); }
+.badge-closed { background: var(--red-bg); color: var(--red); border: 1px solid rgba(224,85,85,0.3); }
+.badge-soldout { background: var(--border); color: var(--text-muted); border: 1px solid var(--border2); }
+
+/* ─── ORDER CARDS ─── */
+.order-cards { display: flex; flex-direction: column; gap: 14px; }
+.order-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+}
+.order-card-head {
+  padding: 12px 16px;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+}
+.order-card-head-left { display: flex; align-items: center; gap: 12px; }
+.order-id { font-family: monospace; font-size: 12px; color: var(--text-muted); }
+.member-info strong { font-size: 14px; color: var(--cream); }
+.member-info span { font-size: 12px; color: var(--text-dim); margin-left: 6px; }
+.order-card-body { padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.order-field dt { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px; }
+.order-field dd { font-size: 13px; color: var(--text); }
+.order-field.full { grid-column: 1/-1; }
+.order-card-footer {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: wrap;
+}
+
+/* ─── MODAL ─── */
+.modal-backdrop {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(8,10,12,0.88); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-backdrop.show { display: flex; }
+.modal {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; width: 100%; max-width: 540px;
+  max-height: 90vh; overflow-y: auto;
+  animation: mi 0.2s ease;
+}
+@keyframes mi { from { opacity:0; transform:translateY(12px); } }
+.modal-header {
+  padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 16px; color: var(--cream); font-weight: 500; }
+.modal-close {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--surface3); border: 1px solid var(--border);
+  color: var(--text-dim); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.modal-close:hover { border-color: var(--red); color: var(--red); }
+.modal-body { padding: 18px 22px; }
+.modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ─── FORM ─── */
+.form-group { margin-bottom: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+label { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 5px; letter-spacing: 0.05em; }
+input, textarea, select {
+  width: 100%; background: var(--surface); border: 1px solid var(--border2);
+  color: var(--text); border-radius: var(--r);
+  padding: 8px 11px; font-size: 13px;
+  font-family: 'Noto Sans TC', sans-serif; outline: none; transition: border-color 0.15s;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+textarea { resize: vertical; }
+
+/* ─── FILTERS ─── */
+.filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter-bar select { width: auto; }
+.filter-bar input[type=date] { width: auto; }
+
+/* ─── STOCK BAR ─── */
+.mini-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+.mini-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s; }
+
+/* ─── LOGIN SCREEN ─── */
+#login-screen {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg); display: flex; align-items: center; justify-content: center;
+}
+.login-box {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 36px 32px; width: 360px; text-align: center;
+}
+.login-box .brand { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--cream); margin-bottom: 6px; }
+.login-box .sub { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+.login-box input { margin-bottom: 14px; text-align: center; font-size: 20px; letter-spacing: 0.3em; }
+.login-box button {
+  width: 100%; padding: 11px; background: var(--accent); color: #fff;
+  border: none; border-radius: var(--r); font-size: 14px; font-weight: 500;
+  font-family: 'Noto Sans TC', sans-serif; cursor: pointer; transition: filter 0.2s;
+}
+.login-box button:hover { filter: brightness(1.1); }
+#login-err { font-size: 12px; color: var(--red); margin-top: 8px; display: none; }
+
+/* ─── CONFIG BAR ─── */
+.config-strip {
+  background: rgba(224,160,48,0.08); border: 1px solid rgba(224,160,48,0.2);
+  border-radius: var(--r); padding: 10px 14px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.config-strip p { font-size: 12px; color: var(--amber); flex: 1; }
+.config-strip input { width: 260px; font-size: 12px; padding: 5px 10px; }
+
+/* ─── REPORT TABLE ─── */
+.report-summary {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px; margin-bottom: 20px;
+}
+.report-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
+.report-card dt { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+.report-card dd { font-size: 20px; color: var(--cream); font-weight: 500; }
+.profit-rate { font-size: 12px; color: var(--green); margin-top: 2px; }
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 20px; right: 20px; z-index: 999;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 12px 16px; font-size: 13px;
+  transform: translateY(60px); opacity: 0; transition: all 0.25s;
+  max-width: 280px; box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-left: 3px solid var(--green); }
+.toast.error { border-left: 3px solid var(--red); }
+.toast.info { border-left: 3px solid var(--accent); }
+
+/* ─── PRINT ─── */
+@media print {
+  .sidebar, .topbar, .no-print, button { display: none !important; }
+  .content { margin-left: 0; }
+  body { background: #fff; color: #000; }
+  @page { size: A4; margin: 20mm; }
+  .print-order { page-break-inside: avoid; border: 1px solid #aaa; padding: 16mm; font-family: 'Noto Serif TC', serif; color: #000; }
+  .print-section { margin-bottom: 12px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+  .print-section:last-child { border: none; }
+}
+
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .content { margin-left: 0; }
+  .order-card-body { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── LOGIN ─── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="brand">原豆良選</div>
+    <div class="sub">後台管理系統</div>
+    <input type="password" id="admin-pass" placeholder="••••" maxlength="10" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button onclick="adminLogin()">登入後台</button>
+    <p id="login-err">密碼錯誤，請重試</p>
+  </div>
+</div>
+
+<!-- ─── SIDEBAR ─── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <h1>原豆良選</h1>
+    <span>Admin Dashboard</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">主要功能</div>
+    <div class="nav-item active" onclick="navigate('dashboard')" data-page="dashboard">
+      <span class="icon">🏠</span> 總覽
+    </div>
+    <div class="nav-item" onclick="navigate('orders')" data-page="orders">
+      <span class="icon">📋</span> 訂單審核
+      <span class="nav-badge" id="pending-badge">0</span>
+    </div>
+    <div class="nav-item" onclick="navigate('products')" data-page="products">
+      <span class="icon">☕</span> 商品管理
+    </div>
+    <div class="nav-section">工具</div>
+    <div class="nav-item" onclick="navigate('members')" data-page="members">
+      <span class="icon">👤</span> 會員管理
+    </div>
+    <div class="nav-item" onclick="navigate('reports')" data-page="reports">
+      <span class="icon">📊</span> 銷售報表
+    </div>
+    <div class="nav-section">系統</div>
+    <div class="nav-item" onclick="navigate('settings')" data-page="settings">
+      <span class="icon">⚙️</span> 設定
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <span>管理員已登入</span>
+    <button onclick="adminLogout()">登出</button>
+  </div>
+</aside>
+
+<!-- ─── CONTENT ─── -->
+<div class="content">
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">總覽</span>
+    <div class="topbar-right">
+      <span id="gas-status" class="gas-err">GAS 未連線</span>
+      <span style="font-size:12px;color:var(--text-muted)" id="today-date"></span>
+    </div>
+  </div>
+
+  <!-- ─── DASHBOARD ─── -->
+  <div class="page active" id="page-dashboard">
+    <div class="config-strip" id="admin-config-strip">
+      <p>⚙️ 請設定 GAS URL 以連接後端</p>
+      <input type="text" id="admin-gas-input" placeholder="https://script.google.com/macros/s/xxx/exec">
+      <button class="btn btn-amber btn-sm" onclick="saveAdminGas()">儲存</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card amber"><div class="stat-label">待審核訂單</div><div class="stat-value" id="stat-pending">—</div><div class="stat-sub">需盡快處理</div></div>
+      <div class="stat-card green"><div class="stat-label">已成交訂單</div><div class="stat-value" id="stat-approved">—</div><div class="stat-sub">本月</div></div>
+      <div class="stat-card accent"><div class="stat-label">開放商品</div><div class="stat-value" id="stat-products">—</div><div class="stat-sub">批次中</div></div>
+      <div class="stat-card"><div class="stat-label">會員總數</div><div class="stat-value" id="stat-members">—</div><div class="stat-sub">已註冊</div></div>
+    </div>
+    <div class="section-head"><h2>最近待審核訂單</h2><button class="btn btn-secondary btn-sm" onclick="navigate('orders')">查看全部</button></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>訂單編號</th><th>會員</th><th>商品</th><th>重量</th><th>金額</th><th>下單時間</th><th>操作</th>
+        </tr></thead>
+        <tbody id="dash-orders-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── ORDERS ─── -->
+  <div class="page" id="page-orders">
+    <div class="filter-bar">
+      <select id="filter-status" onchange="loadOrders()">
+        <option value="PENDING">待審核</option>
+        <option value="APPROVED">已成交</option>
+        <option value="REJECTED">已拒絕</option>
+        <option value="ALL">全部</option>
+      </select>
+      <input type="date" id="filter-from" onchange="loadOrders()">
+      <input type="date" id="filter-to" onchange="loadOrders()">
+      <select id="filter-lot" onchange="loadOrders()"><option value="">所有批次</option></select>
+      <button class="btn btn-secondary btn-sm" onclick="loadOrders()">🔄 刷新</button>
+    </div>
+    <div class="order-cards" id="order-cards-list"><div style="text-align:center;padding:32px;color:var(--text-muted)">載入中…</div></div>
+  </div>
+
+  <!-- ─── PRODUCTS ─── -->
+  <div class="page" id="page-products">
+    <div class="section-head">
+      <h2>商品 / Lot 管理</h2>
+      <button class="btn btn-primary btn-sm" onclick="openProductModal()">＋ 新增批次</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>批次名稱</th><th>產地</th><th>庫存</th><th>可用</th><th>售價</th><th>截止時間</th><th>狀態</th><th>操作</th>
+        </tr></thead>
+        <tbody id="products-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── MEMBERS ─── -->
+  <div class="page" id="page-members">
+    <div class="section-head"><h2>會員管理</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>姓名</th><th>電話</th><th>電郵</th><th>公司</th><th>統編</th><th>地址</th><th>操作</th>
+        </tr></thead>
+        <tbody id="members-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── REPORTS ─── -->
+  <div class="page" id="page-reports">
+    <div class="section-head">
+      <h2>銷售報表</h2>
+      <button class="btn btn-secondary btn-sm no-print" onclick="exportCSV()">匯出 CSV</button>
+    </div>
+    <div class="report-summary" id="report-summary"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Lot名稱</th><th>總庫存</th><th>已售(kg)</th><th>訂單數</th><th>銷售額</th><th>成本</th><th>毛利</th><th>毛利率</th>
+        </tr></thead>
+        <tbody id="report-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px">載入中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── SETTINGS ─── -->
+  <div class="page" id="page-settings">
+    <div class="section-head"><h2>系統設定</h2></div>
+    <div style="max-width:480px;">
+      <div class="form-group">
+        <label>Google Apps Script 部署 URL</label>
+        <input type="text" id="settings-gas" placeholder="https://script.google.com/macros/s/xxx/exec">
+      </div>
+      <div class="form-group">
+        <label>平台顯示名稱</label>
+        <input type="text" id="settings-name" value="原豆良選">
+      </div>
+      <div class="form-group">
+        <label>寄件人地址（列印用）</label>
+        <textarea id="settings-sender" rows="2" placeholder="台北市中山區..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">儲存設定</button>
+    </div>
+  </div>
+
+</div><!-- end content -->
+
+<!-- ─── REJECT MODAL ─── -->
+<div class="modal-backdrop" id="reject-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">拒絕訂單</span>
+      <button class="modal-close" onclick="closeModal('reject-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px">訂單 <strong id="reject-order-id" style="color:var(--cream)"></strong></p>
+      <div class="form-group">
+        <label>拒絕原因</label>
+        <textarea id="reject-reason" rows="3" placeholder="請說明拒絕原因（會員可見）"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('reject-modal')">取消</button>
+      <button class="btn btn-red" onclick="confirmReject()">確認拒絕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PRODUCT MODAL ─── -->
+<div class="modal-backdrop" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="product-modal-title">新增批次</span>
+      <button class="modal-close" onclick="closeModal('product-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pm-id">
+      <div class="form-group"><label>批次名稱 *</label><input id="pm-name" placeholder="肯亞 AA 2025春批"></div>
+      <div class="form-row">
+        <div class="form-group"><label>產地 *</label><input id="pm-origin" placeholder="肯亞"></div>
+        <div class="form-group"><label>處理法</label><input id="pm-process" placeholder="水洗"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>收成年份</label><input id="pm-year" type="number" placeholder="2025"></div>
+        <div class="form-group"><label>總庫存 (kg) *</label><input id="pm-stock" type="number" placeholder="56"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>每袋重量 (kg)</label><input id="pm-bagw" type="number" placeholder="30"></div>
+        <div class="form-group"><label>每袋成本 (元)</label><input id="pm-cost" type="number" placeholder="450"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>1kg 售價</label><input id="pm-p1" type="number" placeholder="18"></div>
+        <div class="form-group"><label>5kg 售價</label><input id="pm-p5" type="number" placeholder="85"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>整袋售價</label><input id="pm-pb" type="number" placeholder="500"></div>
+        <div class="form-group"><label>截止時間 *</label><input id="pm-deadline" type="datetime-local"></div>
+      </div>
+      <div class="form-group"><label>描述</label><textarea id="pm-desc" rows="2" placeholder="花香明亮..."></textarea></div>
+      <p id="pm-error" style="font-size:12px;color:var(--red);display:none;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('product-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveProduct()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MEMBER MODAL ─── -->
+<div class="modal-backdrop" id="member-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">編輯會員資料</span>
+      <button class="modal-close" onclick="closeModal('member-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mm-id">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-size:13px;">
+        <div style="color:var(--text-muted);font-size:10px;text-transform:uppercase;margin-bottom:6px">基本資訊（唯讀）</div>
+        <div><span style="color:var(--text-dim)">姓名：</span><span id="mm-ro-name" style="color:var(--cream)"></span></div>
+        <div><span style="color:var(--text-dim)">電話：</span><span id="mm-ro-phone" style="color:var(--cream)"></span></div>
+        <div><span style="color:var(--text-dim)">電郵：</span><span id="mm-ro-email" style="color:var(--cream)"></span></div>
+      </div>
+      <div class="form-group"><label>郵寄地址（含郵遞區號）</label><textarea id="mm-address" rows="2"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>公司行號</label><input id="mm-company"></div>
+        <div class="form-group"><label>統一編號（8碼）</label><input id="mm-taxid" maxlength="8"></div>
+      </div>
+      <div class="form-group"><label>備註</label><textarea id="mm-notes" rows="2"></textarea></div>
+      <p id="mm-error" style="font-size:12px;color:var(--red);display:none;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('member-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveMember()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PRINT AREA ─── -->
+<div id="print-area" style="display:none;"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────
+const ADMIN_PWD = '7777';
+let GAS_URL = localStorage.getItem('admin_gas_url') || '';
+let adminToken = sessionStorage.getItem('adminToken') || null;
+let currentRejectId = null;
+let currentEditProduct = null;
+let currentEditMember = null;
+
+// ─── INIT ─────────────────────────────────────────────────
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('zh-TW');
+if (GAS_URL) {
+  document.getElementById('admin-config-strip').style.display = 'none';
+  document.getElementById('admin-gas-input').value = GAS_URL;
+  document.getElementById('settings-gas').value = GAS_URL;
+  document.getElementById('gas-status').textContent = 'GAS 已連線';
+  document.getElementById('gas-status').className = 'gas-ok';
+}
+if (adminToken) { document.getElementById('login-screen').style.display = 'none'; initDashboard(); }
+
+// ─── AUTH ─────────────────────────────────────────────────
+function adminLogin() {
+  const pwd = document.getElementById('admin-pass').value;
+  if (pwd === ADMIN_PWD) {
+    adminToken = 'admin_' + Date.now();
+    sessionStorage.setItem('adminToken', adminToken);
+    document.getElementById('login-screen').style.display = 'none';
+    initDashboard();
+  } else {
+    document.getElementById('login-err').style.display = 'block';
+    document.getElementById('admin-pass').value = '';
+  }
+}
+document.getElementById('admin-pass').addEventListener('keydown', e => { if(e.key==='Enter') adminLogin(); });
+
+function adminLogout() {
+  sessionStorage.removeItem('adminToken');
+  adminToken = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-pass').value = '';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+// ─── API ──────────────────────────────────────────────────
+async function api(action, params = {}) {
+  if (!GAS_URL) throw new Error('no-gas');
+  const url = new URL(GAS_URL);
+  url.searchParams.set('action', action);
+  url.searchParams.set('adminToken', adminToken);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString());
+  return res.json();
+}
+
+async function apiPost(action, body = {}) {
+  if (!GAS_URL) throw new Error('no-gas');
+  const url = new URL(GAS_URL);
+  url.searchParams.set('action', action);
+  const res = await fetch(url.toString(), {
+    method: 'POST',
+    body: JSON.stringify({ adminToken, ...body }),
+    headers: { 'Content-Type': 'application/json' }
+  });
+  return res.json();
+}
+
+// ─── GAS CONFIG ───────────────────────────────────────────
+function saveAdminGas() {
+  const v = document.getElementById('admin-gas-input').value.trim();
+  if (!v) return showToast('請輸入 GAS URL','error');
+  GAS_URL = v;
+  localStorage.setItem('admin_gas_url', v);
+  document.getElementById('settings-gas').value = v;
+  document.getElementById('admin-config-strip').style.display = 'none';
+  document.getElementById('gas-status').textContent = 'GAS 已連線';
+  document.getElementById('gas-status').className = 'gas-ok';
+  showToast('GAS URL 已儲存','success');
+  initDashboard();
+}
+
+// ─── NAVIGATE ─────────────────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  const titles = { dashboard:'總覽', orders:'訂單審核', products:'商品管理', members:'會員管理', reports:'銷售報表', settings:'系統設定' };
+  document.getElementById('topbar-title').textContent = titles[page] || page;
+  if (page==='orders') loadOrders();
+  if (page==='products') loadProducts();
+  if (page==='members') loadMembers();
+  if (page==='reports') loadReports();
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────
+function initDashboard() {
+  loadDashStats();
+  loadDashOrders();
+}
+
+async function loadDashStats() {
+  try {
+    const data = await api('getStats');
+    document.getElementById('stat-pending').textContent = data.pending || 0;
+    document.getElementById('stat-approved').textContent = data.approved || 0;
+    document.getElementById('stat-products').textContent = data.open_products || 0;
+    document.getElementById('stat-members').textContent = data.members || 0;
+    document.getElementById('pending-badge').textContent = data.pending || 0;
+  } catch(e) {
+    // Demo
+    document.getElementById('stat-pending').textContent = 3;
+    document.getElementById('stat-approved').textContent = 12;
+    document.getElementById('stat-products').textContent = 2;
+    document.getElementById('stat-members').textContent = 8;
+    document.getElementById('pending-badge').textContent = 3;
+  }
+}
+
+async function loadDashOrders() {
+  const tbody = document.getElementById('dash-orders-tbody');
+  try {
+    const data = await api('getOrders', { status:'PENDING', limit:5 });
+    renderDashOrders(data.orders || getDemoOrders().filter(o=>o.order_status==='PENDING'));
+  } catch(e) { renderDashOrders(getDemoOrders().filter(o=>o.order_status==='PENDING')); }
+}
+
+function renderDashOrders(orders) {
+  const tbody = document.getElementById('dash-orders-tbody');
+  if (!orders.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px">無待審核訂單</td></tr>'; return; }
+  tbody.innerHTML = orders.map(o => `
+    <tr>
+      <td class="mono">${o.order_id}</td>
+      <td><strong style="color:var(--cream)">${o.member_name||'—'}</strong> <span style="font-size:11px;color:var(--text-muted)">${o.member_phone||''}</span></td>
+      <td>${o.lot_name||'—'}</td>
+      <td>${o.total_kg} kg</td>
+      <td style="color:var(--amber)">$${o.total_price?.toLocaleString()}</td>
+      <td style="font-size:12px;color:var(--text-dim)">${new Date(o.created_at).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+      <td>
+        <button class="btn btn-green btn-xs" onclick="approveOrder('${o.order_id}')">批准</button>
+        <button class="btn btn-red btn-xs" onclick="openReject('${o.order_id}')" style="margin-left:4px">拒絕</button>
+      </td>
+    </tr>`).join('');
+}
+
+// ─── ORDERS ──────────────────────────────────────────────
+async function loadOrders() {
+  const status = document.getElementById('filter-status').value;
+  const container = document.getElementById('order-cards-list');
+  container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted)">載入中…</div>';
+  try {
+    const data = await api('getOrders', { status });
+    renderOrderCards(data.orders || getDemoOrders(status));
+  } catch(e) { renderOrderCards(getDemoOrders(status)); }
+}
+
+function getDemoOrders(status) {
+  const all = [
+    { order_id:'ORD-001', member_name:'李明', member_phone:'0912345678', lot_name:'肯亞 AA 2025春批', quantity_1kg:3, quantity_5kg:0, quantity_whole_bag:1, total_kg:33, total_price:594, order_status:'PENDING', created_at:'2025-02-20T10:30:00Z', notes:'請選擇較新批次', shipping_address:'台北市中山區民生東路123號5樓 100' },
+    { order_id:'ORD-002', member_name:'王小華', member_phone:'0987654321', lot_name:'巴西 日曬 2024冬批', quantity_1kg:2, quantity_5kg:1, quantity_whole_bag:0, total_kg:7, total_price:115, order_status:'PENDING', created_at:'2025-02-20T14:00:00Z', notes:'', shipping_address:'新北市板橋區文化路一段45號 220' },
+    { order_id:'ORD-003', member_name:'陳大同', member_phone:'0922111333', lot_name:'肯亞 AA 2025春批', quantity_1kg:0, quantity_5kg:2, quantity_whole_bag:0, total_kg:10, total_price:170, order_status:'APPROVED', created_at:'2025-02-18T09:00:00Z', notes:'', approved_at:'2025-02-18T11:00:00Z' },
+    { order_id:'ORD-004', member_name:'張美玲', member_phone:'0933222444', lot_name:'衣索比亞 耶加雪菲', quantity_1kg:5, quantity_5kg:0, quantity_whole_bag:0, total_kg:5, total_price:110, order_status:'REJECTED', created_at:'2025-02-17T16:30:00Z', rejected_reason:'庫存不足' },
+  ];
+  if (!status || status==='ALL') return all;
+  return all.filter(o => o.order_status === status);
+}
+
+function renderOrderCards(orders) {
+  const container = document.getElementById('order-cards-list');
+  if (!orders.length) { container.innerHTML = '<div style="text-align:center;padding:48px;color:var(--text-muted)">無符合條件的訂單</div>'; return; }
+  const statusMap = { PENDING:'待審核', APPROVED:'已成交', REJECTED:'已拒絕', CANCELLED:'已取消' };
+  const badgeCls = { PENDING:'badge-pending', APPROVED:'badge-approved', REJECTED:'badge-rejected', CANCELLED:'badge-cancelled' };
+  container.innerHTML = orders.map(o => `
+    <div class="order-card">
+      <div class="order-card-head">
+        <div class="order-card-head-left">
+          <span class="badge ${badgeCls[o.order_status]}">${statusMap[o.order_status]}</span>
+          <div class="member-info"><strong>${o.member_name||'—'}</strong><span>${o.member_phone||''}</span></div>
+        </div>
+        <span class="order-id">${o.order_id}</span>
+      </div>
+      <div class="order-card-body">
+        <div class="order-field"><dt>商品批次</dt><dd>${o.lot_name||'—'}</dd></div>
+        <div class="order-field"><dt>下單時間</dt><dd>${new Date(o.created_at).toLocaleString('zh-TW')}</dd></div>
+        <div class="order-field"><dt>購買明細</dt><dd>
+          ${o.quantity_1kg>0?`1kg × ${o.quantity_1kg} = ${o.quantity_1kg}kg<br>`:''}
+          ${o.quantity_5kg>0?`5kg × ${o.quantity_5kg} = ${o.quantity_5kg*5}kg<br>`:''}
+          ${o.quantity_whole_bag>0?`整袋 × ${o.quantity_whole_bag}<br>`:''}
+          <strong style="color:var(--cream)">合計 ${o.total_kg}kg</strong>
+        </dd></div>
+        <div class="order-field"><dt>金額</dt><dd style="font-size:18px;color:var(--amber);font-weight:500">$${o.total_price?.toLocaleString()}</dd></div>
+        ${o.shipping_address?`<div class="order-field full"><dt>寄送地址</dt><dd>${o.shipping_address}</dd></div>`:''}
+        ${o.notes?`<div class="order-field full"><dt>備註</dt><dd style="color:var(--amber)">${o.notes}</dd></div>`:''}
+        ${o.rejected_reason?`<div class="order-field full"><dt>拒絕原因</dt><dd style="color:var(--red)">${o.rejected_reason}</dd></div>`:''}
+      </div>
+      <div class="order-card-footer no-print">
+        <button class="btn btn-secondary btn-sm" onclick="printOrder('${o.order_id}')">🖨 訂單</button>
+        ${o.order_status==='APPROVED'?`<button class="btn btn-secondary btn-sm" onclick="printShipping('${o.order_id}')">📦 出貨單</button>`:''}
+        ${o.order_status==='APPROVED'?`<button class="btn btn-secondary btn-sm" onclick="printLabel('${o.order_id}')">🏷 地址標籤</button>`:''}
+        ${o.order_status==='PENDING'?`<button class="btn btn-green btn-sm" onclick="approveOrder('${o.order_id}')">✔ 批准</button>`:''}
+        ${o.order_status==='PENDING'?`<button class="btn btn-red btn-sm" onclick="openReject('${o.order_id}')">✖ 拒絕</button>`:''}
+      </div>
+    </div>`).join('');
+}
+
+// ─── APPROVE / REJECT ────────────────────────────────────
+async function approveOrder(orderId) {
+  try {
+    const data = await apiPost('approveOrder', { order_id: orderId });
+    if (data.success) { showToast('訂單已批准','success'); loadOrders(); loadDashStats(); }
+    else showToast(data.error||'批准失敗','error');
+  } catch(e) {
+    showToast('（示範）訂單已批准','success');
+    loadOrders(); loadDashStats();
+  }
+}
+
+function openReject(orderId) {
+  currentRejectId = orderId;
+  document.getElementById('reject-order-id').textContent = orderId;
+  document.getElementById('reject-reason').value = '';
+  openModal('reject-modal');
+}
+
+async function confirmReject() {
+  const reason = document.getElementById('reject-reason').value.trim();
+  if (!reason) { showToast('請填寫拒絕原因','error'); return; }
+  try {
+    const data = await apiPost('rejectOrder', { order_id: currentRejectId, reason });
+    if (data.success) { showToast('訂單已拒絕','info'); closeModal('reject-modal'); loadOrders(); loadDashStats(); }
+    else showToast(data.error||'操作失敗','error');
+  } catch(e) {
+    showToast('（示範）訂單已拒絕','info');
+    closeModal('reject-modal'); loadOrders(); loadDashStats();
+  }
+}
+
+// ─── PRODUCTS ────────────────────────────────────────────
+async function loadProducts() {
+  const tbody = document.getElementById('products-tbody');
+  try {
+    const data = await api('getProducts');
+    renderProducts(data.products || getDemoProducts());
+  } catch(e) { renderProducts(getDemoProducts()); }
+}
+
+function getDemoProducts() {
+  return [
+    { product_id:'prod_001', lot_name:'肯亞 AA 2025春批', origin:'肯亞', process:'水洗', harvest_year:2025, total_stock_kg:56, bag_weight_kg:30, cost_per_bag:450, unit_price_1kg:18, unit_price_5kg:85, unit_price_whole_bag:500, deadline:'2025-06-01T23:59:59Z', status:'OPEN', approved_kg:13, pending_kg:8, description:'花香明亮' },
+    { product_id:'prod_002', lot_name:'巴西 日曬 2024冬批', origin:'巴西', process:'日曬', harvest_year:2024, total_stock_kg:100, bag_weight_kg:30, cost_per_bag:380, unit_price_1kg:15, unit_price_5kg:70, unit_price_whole_bag:430, deadline:'2025-06-15T23:59:59Z', status:'OPEN', approved_kg:30, pending_kg:5, description:'巧克力風味' },
+    { product_id:'prod_003', lot_name:'衣索比亞 耶加雪菲 G1', origin:'衣索比亞', process:'日曬', harvest_year:2025, total_stock_kg:30, bag_weight_kg:30, cost_per_bag:520, unit_price_1kg:22, unit_price_5kg:105, unit_price_whole_bag:620, deadline:'2025-05-20T23:59:59Z', status:'CLOSED', approved_kg:30, pending_kg:0, description:'藍莓玫瑰香' },
+  ];
+}
+
+function renderProducts(products) {
+  const tbody = document.getElementById('products-tbody');
+  const badgeCls = { OPEN:'badge-open', CLOSED:'badge-closed', SOLD_OUT:'badge-soldout' };
+  const badgeTxt = { OPEN:'募集中', CLOSED:'已截止', SOLD_OUT:'售罄' };
+  tbody.innerHTML = products.map(p => {
+    const sold = (p.approved_kg||0)+(p.pending_kg||0);
+    const avail = p.total_stock_kg - sold;
+    const pct = Math.min(100, Math.round(sold/p.total_stock_kg*100));
+    return `
+    <tr>
+      <td><strong style="color:var(--cream)">${p.lot_name}</strong><div style="font-size:11px;color:var(--text-muted)">${p.origin} · ${p.process}</div></td>
+      <td>${p.origin}</td>
+      <td>
+        <div style="font-size:13px">${p.total_stock_kg} kg</div>
+        <div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div>
+        <div style="font-size:10px;color:var(--text-muted)">${sold}kg 已訂</div>
+      </td>
+      <td style="color:${avail>0?'var(--green)':'var(--red)'}">${avail} kg</td>
+      <td style="font-size:12px">
+        <div>1kg: $${p.unit_price_1kg}</div>
+        <div>5kg: $${p.unit_price_5kg}</div>
+        <div>袋: $${p.unit_price_whole_bag}</div>
+      </td>
+      <td style="font-size:12px;color:var(--text-dim)">${new Date(p.deadline).toLocaleDateString('zh-TW')}</td>
+      <td><span class="badge ${badgeCls[p.status]}">${badgeTxt[p.status]}</span></td>
+      <td>
+        <button class="btn btn-secondary btn-xs" onclick="openProductModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">編輯</button>
+        <button class="btn btn-red btn-xs" onclick="closeProduct('${p.product_id}')" style="margin-top:4px">關閉</button>
+      </td>
+    </tr>`;
+  }).join('');
+  // Also update lot filter in orders
+  const sel = document.getElementById('filter-lot');
+  sel.innerHTML = '<option value="">所有批次</option>' + products.map(p=>`<option value="${p.product_id}">${p.lot_name}</option>`).join('');
+}
+
+function openProductModal(product) {
+  currentEditProduct = product || null;
+  document.getElementById('product-modal-title').textContent = product ? '編輯批次' : '新增批次';
+  const ids = ['pm-id','pm-name','pm-origin','pm-process','pm-year','pm-stock','pm-bagw','pm-cost','pm-p1','pm-p5','pm-pb','pm-deadline','pm-desc'];
+  const keys = ['product_id','lot_name','origin','process','harvest_year','total_stock_kg','bag_weight_kg','cost_per_bag','unit_price_1kg','unit_price_5kg','unit_price_whole_bag','deadline','description'];
+  ids.forEach((id,i) => {
+    const el = document.getElementById(id);
+    let val = product ? (product[keys[i]]||'') : '';
+    if (keys[i]==='deadline' && val) { val = new Date(val).toISOString().slice(0,16); }
+    el.value = val;
+  });
+  document.getElementById('pm-error').style.display = 'none';
+  openModal('product-modal');
+}
+
+async function saveProduct() {
+  const name = document.getElementById('pm-name').value.trim();
+  const origin = document.getElementById('pm-origin').value.trim();
+  const stock = document.getElementById('pm-stock').value;
+  const deadline = document.getElementById('pm-deadline').value;
+  const errEl = document.getElementById('pm-error');
+  if (!name||!origin||!stock||!deadline) { errEl.textContent='請填寫必填欄位'; errEl.style.display='block'; return; }
+  const payload = {
+    product_id: document.getElementById('pm-id').value,
+    lot_name: name, origin, process: document.getElementById('pm-process').value,
+    harvest_year: document.getElementById('pm-year').value,
+    total_stock_kg: stock, bag_weight_kg: document.getElementById('pm-bagw').value,
+    cost_per_bag: document.getElementById('pm-cost').value,
+    unit_price_1kg: document.getElementById('pm-p1').value,
+    unit_price_5kg: document.getElementById('pm-p5').value,
+    unit_price_whole_bag: document.getElementById('pm-pb').value,
+    deadline: new Date(deadline).toISOString(),
+    description: document.getElementById('pm-desc').value,
+  };
+  try {
+    const action = payload.product_id ? 'updateProduct' : 'createProduct';
+    const data = await apiPost(action, payload);
+    if (data.success) { showToast(payload.product_id?'商品已更新':'商品已新增','success'); closeModal('product-modal'); loadProducts(); }
+    else { errEl.textContent = data.error||'儲存失敗'; errEl.style.display='block'; }
+  } catch(e) {
+    showToast('（示範）商品已儲存','success'); closeModal('product-modal'); loadProducts();
+  }
+}
+
+async function closeProduct(productId) {
+  if (!confirm('確認關閉此批次？關閉後將無法下單。')) return;
+  try {
+    await apiPost('updateProductStatus', { product_id: productId, status:'CLOSED' });
+    showToast('批次已關閉','info'); loadProducts();
+  } catch(e) { showToast('（示範）批次已關閉','info'); loadProducts(); }
+}
+
+// ─── MEMBERS ─────────────────────────────────────────────
+async function loadMembers() {
+  try {
+    const data = await api('getMembers');
+    renderMembers(data.members || getDemoMembers());
+  } catch(e) { renderMembers(getDemoMembers()); }
+}
+
+function getDemoMembers() {
+  return [
+    { member_id:'mem_001', name:'李明', phone:'0912345678', email:'li@example.com', company_name:'ABC咖啡店', tax_id:'12345678', shipping_address:'台北市中山區民生東路123號5樓 100', notes:'' },
+    { member_id:'mem_002', name:'王小華', phone:'0987654321', email:'wang@example.com', company_name:'', tax_id:'', shipping_address:'新北市板橋區文化路一段45號 220', notes:'' },
+  ];
+}
+
+function renderMembers(members) {
+  const tbody = document.getElementById('members-tbody');
+  tbody.innerHTML = members.map(m => `
+    <tr>
+      <td><strong style="color:var(--cream)">${m.name}</strong></td>
+      <td>${m.phone}</td>
+      <td style="font-size:12px;color:var(--text-dim)">${m.email||'—'}</td>
+      <td>${m.company_name||'—'}</td>
+      <td class="mono">${m.tax_id||'—'}</td>
+      <td style="font-size:12px;color:var(--text-dim);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.shipping_address||'—'}</td>
+      <td><button class="btn btn-secondary btn-xs" onclick="openMemberModal(${JSON.stringify(m).replace(/"/g,'&quot;')})">編輯</button></td>
+    </tr>`).join('');
+}
+
+function openMemberModal(member) {
+  currentEditMember = member;
+  document.getElementById('mm-id').value = member.member_id;
+  document.getElementById('mm-ro-name').textContent = member.name;
+  document.getElementById('mm-ro-phone').textContent = member.phone;
+  document.getElementById('mm-ro-email').textContent = member.email||'—';
+  document.getElementById('mm-address').value = member.shipping_address||'';
+  document.getElementById('mm-company').value = member.company_name||'';
+  document.getElementById('mm-taxid').value = member.tax_id||'';
+  document.getElementById('mm-notes').value = member.notes||'';
+  document.getElementById('mm-error').style.display='none';
+  openModal('member-modal');
+}
+
+async function saveMember() {
+  const taxid = document.getElementById('mm-taxid').value.trim();
+  const errEl = document.getElementById('mm-error');
+  if (taxid && !/^\d{8}$/.test(taxid)) { errEl.textContent='統一編號需為8碼數字'; errEl.style.display='block'; return; }
+  const payload = {
+    member_id: document.getElementById('mm-id').value,
+    shipping_address: document.getElementById('mm-address').value,
+    company_name: document.getElementById('mm-company').value,
+    tax_id: taxid,
+    notes: document.getElementById('mm-notes').value,
+  };
+  try {
+    const data = await apiPost('updateMember', payload);
+    if (data.success) { showToast('會員資料已更新','success'); closeModal('member-modal'); loadMembers(); }
+    else { errEl.textContent=data.error||'更新失敗'; errEl.style.display='block'; }
+  } catch(e) { showToast('（示範）會員資料已儲存','success'); closeModal('member-modal'); loadMembers(); }
+}
+
+// ─── REPORTS ─────────────────────────────────────────────
+async function loadReports() {
+  try {
+    const data = await api('getReports');
+    renderReports(data || getDemoReport());
+  } catch(e) { renderReports(getDemoReport()); }
+}
+
+function getDemoReport() {
+  return {
+    lots: [
+      { lot_name:'肯亞 AA 2025春批', total_stock:56, sold_kg:13, orders:3, revenue:234, cost:195, profit:39 },
+      { lot_name:'巴西 日曬 2024冬批', total_stock:100, sold_kg:30, orders:5, revenue:450, cost:380, profit:70 },
+      { lot_name:'衣索比亞 耶加雪菲 G1', total_stock:30, sold_kg:30, orders:4, revenue:660, cost:520, profit:140 },
+    ],
+    total_revenue:1344, total_cost:1095, total_profit:249
+  };
+}
+
+function renderReports(data) {
+  const lots = data.lots || [];
+  const profitRate = data.total_revenue > 0 ? (data.total_profit/data.total_revenue*100).toFixed(1) : 0;
+  document.getElementById('report-summary').innerHTML = `
+    <div class="report-card"><dt>總銷售額</dt><dd>$${(data.total_revenue||0).toLocaleString()}</dd></div>
+    <div class="report-card"><dt>總成本</dt><dd>$${(data.total_cost||0).toLocaleString()}</dd></div>
+    <div class="report-card"><dt>毛利</dt><dd style="color:var(--green)">$${(data.total_profit||0).toLocaleString()}</dd><div class="profit-rate">毛利率 ${profitRate}%</div></div>
+  `;
+  const tbody = document.getElementById('report-tbody');
+  tbody.innerHTML = lots.map(l => {
+    const rate = l.revenue > 0 ? (l.profit/l.revenue*100).toFixed(1) : 0;
+    return `<tr>
+      <td><strong style="color:var(--cream)">${l.lot_name}</strong></td>
+      <td>${l.total_stock} kg</td>
+      <td>${l.sold_kg} kg</td>
+      <td>${l.orders} 筆</td>
+      <td>$${l.revenue?.toLocaleString()}</td>
+      <td style="color:var(--text-dim)">$${l.cost?.toLocaleString()}</td>
+      <td style="color:var(--green)">$${l.profit?.toLocaleString()}</td>
+      <td><span style="color:${rate>=15?'var(--green)':rate>=10?'var(--amber)':'var(--red)'}">${rate}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCSV() {
+  const rows = [['批次','總庫存','已售kg','訂單數','銷售額','成本','毛利','毛利率']];
+  document.querySelectorAll('#report-tbody tr').forEach(tr => {
+    rows.push([...tr.querySelectorAll('td')].map(td=>td.textContent.trim()));
+  });
+  const csv = rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download = `sales_report_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ─── PRINT ───────────────────────────────────────────────
+function getOrderById(orderId) {
+  return getDemoOrders('ALL').find(o=>o.order_id===orderId) || { order_id:orderId };
+}
+
+function printOrder(orderId) {
+  const o = getOrderById(orderId);
+  const html = `
+    <div class="print-order" style="font-family:'Noto Serif TC',serif;color:#000;padding:20mm;border:1px solid #aaa">
+      <h2 style="text-align:center;font-size:20px;margin-bottom:4px">咖啡生豆銷售平台</h2>
+      <h3 style="text-align:center;font-size:15px;font-weight:normal;margin-bottom:16px;color:#555">生豆銷售訂單</h3>
+      <div class="print-section" style="margin-bottom:12px;border-bottom:1px solid #ccc;padding-bottom:10px">
+        <div><strong>訂單編號：</strong>${o.order_id}</div>
+        <div><strong>下單時間：</strong>${new Date(o.created_at||Date.now()).toLocaleString('zh-TW')}</div>
+      </div>
+      <div class="print-section" style="margin-bottom:12px;border-bottom:1px solid #ccc;padding-bottom:10px">
+        <div style="font-weight:bold;margin-bottom:6px;border-bottom:1px solid #eee">訂購人資訊</div>
+        <div>姓名：${o.member_name||'—'}</div>
+        <div>電話：${o.member_phone||'—'}</div>
+        <div>地址：${o.shipping_address||'—'}</div>
+      </div>
+      <div class="print-section" style="margin-bottom:12px;border-bottom:1px solid #ccc;padding-bottom:10px">
+        <div style="font-weight:bold;margin-bottom:6px;border-bottom:1px solid #eee">商品資訊</div>
+        <div>批次：${o.lot_name||'—'}</div>
+        ${o.quantity_1kg?`<div>1kg × ${o.quantity_1kg} 包 = ${o.quantity_1kg}kg</div>`:''}
+        ${o.quantity_5kg?`<div>5kg × ${o.quantity_5kg} 包 = ${o.quantity_5kg*5}kg</div>`:''}
+        ${o.quantity_whole_bag?`<div>整袋 × ${o.quantity_whole_bag} 袋</div>`:''}
+        <div style="font-weight:bold;margin-top:6px;border-top:1px solid #eee;padding-top:6px">總重量：${o.total_kg||'—'} kg　金額：$${o.total_price?.toLocaleString()||'—'}</div>
+      </div>
+      ${o.notes?`<div style="margin-bottom:8px"><strong>備註：</strong>${o.notes}</div>`:''}
+      <div style="font-size:12px;color:#555;margin-top:16px">狀態：${o.order_status}</div>
+    </div>`;
+  const win = window.open('','_blank');
+  win.document.write(`<html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC&display=swap" rel="stylesheet"><style>body{font-family:'Noto Serif TC',serif;margin:20mm}</style></head><body onload="window.print()">${html}</body></html>`);
+  win.document.close();
+}
+
+function printShipping(orderId) {
+  const o = getOrderById(orderId);
+  const win = window.open('','_blank');
+  win.document.write(`<html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC&display=swap" rel="stylesheet"><style>body{font-family:'Noto Serif TC',serif;margin:20mm}hr{border:1px solid #000}.label{font-weight:bold;font-size:12px;color:#555;text-transform:uppercase;margin-bottom:4px}</style></head><body onload="window.print()">
+    <h2 style="text-align:center">咖啡生豆銷售平台</h2>
+    <h3 style="text-align:center;font-weight:normal">生豆出貨單 / PACKING LIST</h3>
+    <hr>
+    <p><span class="label">訂單編號：</span>${o.order_id}</p>
+    <p><span class="label">出貨日期：</span>${new Date().toLocaleDateString('zh-TW')}</p>
+    <hr>
+    <div class="label">收件人</div>
+    <p>姓名：${o.member_name||'—'}<br>電話：${o.member_phone||'—'}<br>地址：${o.shipping_address||'—'}</p>
+    <hr>
+    <div class="label">商品清單</div>
+    <p>Lot：${o.lot_name||'—'}</p>
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
+      <tr><th>品項</th><th>數量</th><th>重量</th></tr>
+      ${o.quantity_1kg?`<tr><td>1kg 包</td><td>${o.quantity_1kg} 包</td><td>${o.quantity_1kg} kg</td></tr>`:''}
+      ${o.quantity_5kg?`<tr><td>5kg 包</td><td>${o.quantity_5kg} 包</td><td>${o.quantity_5kg*5} kg</td></tr>`:''}
+      ${o.quantity_whole_bag?`<tr><td>整袋 (30kg)</td><td>${o.quantity_whole_bag} 袋</td><td>${o.quantity_whole_bag*30} kg</td></tr>`:''}
+      <tr><td colspan="2"><strong>合計</strong></td><td><strong>${o.total_kg||'—'} kg</strong></td></tr>
+    </table>
+    ${o.notes?`<p style="margin-top:12px"><span class="label">備註：</span>${o.notes}</p>`:''}
+    <div style="margin-top:40px;display:flex;gap:60px"><div>打包人簽名：________________</div><div>出貨時間：________________</div></div>
+    </body></html>`);
+  win.document.close();
+}
+
+function printLabel(orderId) {
+  const o = getOrderById(orderId);
+  const win = window.open('','_blank');
+  win.document.write(`<html><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC&display=swap" rel="stylesheet"><style>
+    body{font-family:'Noto Serif TC',serif;margin:0;padding:20px}
+    .label{width:100mm;height:150mm;border:2px solid #000;padding:10mm;page-break-after:always}
+    .section{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #aaa}
+    .section:last-child{border:none}
+    .s-title{font-size:12px;font-weight:bold;margin-bottom:4px;letter-spacing:0.1em}
+    @page{size:A6;margin:0}
+    </style></head><body onload="window.print()">
+    <div class="label">
+      <div class="section">
+        <div class="s-title">【寄件人】</div>
+        <div>咖啡生豆銷售平台</div>
+        <div style="font-size:11px;color:#555">（請在設定中填入地址）</div>
+      </div>
+      <div class="section">
+        <div class="s-title">【收件人】</div>
+        <div style="font-size:16px;font-weight:bold">${o.member_name||'—'}</div>
+        <div>${o.member_phone||''}</div>
+        <div style="margin-top:6px">${o.shipping_address||'—'}</div>
+      </div>
+      <div class="section" style="font-size:11px;color:#555">
+        <div>訂單：${o.order_id}</div>
+        <div>商品：生豆 ${o.total_kg||'—'}kg</div>
+        <div>Lot：${o.lot_name||'—'}</div>
+      </div>
+    </div>
+    </body></html>`);
+  win.document.close();
+}
+
+// ─── SETTINGS ────────────────────────────────────────────
+function saveSettings() {
+  const gasUrl = document.getElementById('settings-gas').value.trim();
+  if (gasUrl) {
+    GAS_URL = gasUrl;
+    localStorage.setItem('admin_gas_url', gasUrl);
+    document.getElementById('gas-status').textContent = 'GAS 已連線';
+    document.getElementById('gas-status').className = 'gas-ok';
+  }
+  showToast('設定已儲存','success');
+}
+
+// ─── MODAL ───────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-backdrop').forEach(el => {
+  el.addEventListener('click', e => { if(e.target===el) el.classList.remove('show'); });
+});
+
+// ─── TOAST ───────────────────────────────────────────────
+let _tt;
+function showToast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast ${type} show`;
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
