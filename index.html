@@ -507,6 +507,8 @@ const LOTS = [
 const LIFF_ID = '2010068872-dwEIsvVD';
 let GAS_URL = 'https://script.google.com/macros/s/AKfycbxw8t8xzWBy5xiRifP7BzGGWrRd8-qlTuTRx1zVf0BXw6rPUhCAJlzGbMZOVn6OtxXq/exec';
 let lineProfile = null; // { userId, displayName }
+let liffReady = false;
+let liffInitPromise = null;
 
 let state = { user: null };
 let currentLot = null, qty = { q1:0, q5:0, qb:0 }, orders = [];
@@ -532,10 +534,17 @@ async function callGas(action, payload = {}) {
 
 /* ─── LIFF INIT & LOGIN FLOW ──────────────────────── */
 async function initLiff() {
+  liffInitPromise = liff.init({ liffId: LIFF_ID })
+    .then(() => { liffReady = true; })
+    .catch((err) => {
+      console.error('LIFF init failed', err);
+      liffReady = false;
+      throw err;
+    });
+
   try {
-    await liff.init({ liffId: LIFF_ID });
+    await liffInitPromise;
   } catch (err) {
-    console.error('LIFF init failed', err);
     showToast('LIFF 初始化失敗，請確認是否從 LINE 開啟', 'error');
     return;
   }
@@ -555,7 +564,7 @@ async function resolveLineProfileAndStatus() {
     lineProfile = { userId: profile.userId, displayName: profile.displayName };
   } catch (err) {
     console.error('getProfile failed', err);
-    showToast('無法取得 LINE 個人資料', 'error');
+    showToast('無法取得 LINE 個人資料，請重新開啟頁面', 'error');
     return;
   }
 
@@ -579,15 +588,34 @@ async function resolveLineProfileAndStatus() {
     }
   } catch (err) {
     console.error('login check failed', err);
+    showToast('連線後端失敗，請稍後再試', 'error');
   }
 }
 
-function startLineLogin() {
-  if (!liff.isLoggedIn()) {
-    liff.login();
+async function startLineLogin() {
+  showToast('處理中…', 'info');
+  try {
+    if (liffInitPromise) await liffInitPromise;
+  } catch (err) {
+    showToast('LIFF 尚未就緒，請確認是否從 LINE 開啟此頁面', 'error');
     return;
   }
-  resolveLineProfileAndStatus();
+
+  if (typeof liff === 'undefined' || !liffReady) {
+    showToast('LIFF 載入失敗，請重新整理頁面', 'error');
+    return;
+  }
+
+  try {
+    if (!liff.isLoggedIn()) {
+      liff.login({ redirectUri: window.location.href });
+      return;
+    }
+    await resolveLineProfileAndStatus();
+  } catch (err) {
+    console.error('startLineLogin error', err);
+    showToast('登入流程發生錯誤：' + (err?.message || '未知錯誤'), 'error');
+  }
 }
 
 function renderLots() {
