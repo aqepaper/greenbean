@@ -275,10 +275,6 @@ footer{background:var(--ink);color:var(--mist2);padding:40px 48px;display:flex;a
   <button onclick="setPending()">模擬待審核</button>
   <button onclick="logout()">登出</button>
   <span style="color:var(--mist2)">· 狀態：<code id="demo-status">訪客</code></span>
-  <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-    <input id="gas-url-input" placeholder="Apps Script 網址" style="font-size:11px;padding:3px 8px;border-radius:2px;border:1px solid rgba(139,105,20,.4);background:var(--paper2);color:var(--ink);width:200px;">
-    <button onclick="saveGasUrl()">儲存</button>
-  </span>
 </div>
 
 <!-- NAV -->
@@ -509,7 +505,7 @@ const LOTS = [
 
 /* ─── LIFF & GAS CONFIG ───────────────────────────── */
 const LIFF_ID = '2010068872-dwEIsvVD';
-let GAS_URL = localStorage.getItem('gas_url') || '';
+let GAS_URL = 'https://script.google.com/macros/s/AKfycbxw8t8xzWBy5xiRifP7BzGGWrRd8-qlTuTRx1zVf0BXw6rPUhCAJlzGbMZOVn6OtxXq/exec';
 let lineProfile = null; // { userId, displayName }
 
 let state = { user: null };
@@ -520,18 +516,8 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', () => {
     document.getElementById('hdr').classList.toggle('scrolled', window.scrollY > 40);
   });
-  const gasInput = document.getElementById('gas-url-input');
-  if (gasInput && GAS_URL) gasInput.value = GAS_URL;
   initLiff();
 });
-
-function saveGasUrl() {
-  const v = document.getElementById('gas-url-input').value.trim();
-  if (!v) return showToast('請輸入 GAS 網址', 'error');
-  GAS_URL = v;
-  localStorage.setItem('gas_url', v);
-  showToast('已儲存後端網址', 'success');
-}
 
 /* ─── GAS API HELPER ──────────────────────────────── */
 async function callGas(action, payload = {}) {
